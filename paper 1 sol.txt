@@ -1,0 +1,405 @@
+Q1. (A) WAP to read last 10 characters from a file using system calis. (B) WAP to create one parent process and one child process also display id of both processes. [10] 
+Q2. (A) Write a program to create two threads. One thread prints a welcome message while the second thread adds two numbers. Both the numbers to be added are passed by the main process to the thread as arguments. (8) WAP to implement the process synchronization using mutex locks. [10] 
+Q3. (A) WAP to implement IPC using unnamed pipes. (B) WAP to open a file in read only mode and read the last 5 characters from the file. Print the same on terminal. [10] 
+Q4. (A) WAP to implement IPC using named pipe. (B) WAP to create a file with some lines of content and write "hello" into that file after 4 characters from starting using system call. [10] 
+Q5. (A). WAP to demonstrate race condition between two processes. [10] (B) WAP to calculate addition of 2. numbers in parent process and display result in child process [10 
+Q6. (A) Create two threads. One thread will add two numbers (c=a+b) and the second thread will subtract the numbers (da-b). Both threads will return the result to the main() function and product of returned values (cd) will be printed by the main() function. (B) Write a program to write into a pipe using popen() and pclose() functions. [10] 
+Q7. (A) WAP to create two threads. One will print the numbers from 1 to 10 and the other thread will find whether a number entered by the user is even or odd. (B) (B) WAP using system calls which will 
+read from 3 character to 10 character from a file opened in read only mode Q8. (A) WAP using system calls which will read from 10 character to 15 character from a file opened in read only mode. (B) WAP to implement race condition using semaphores. [10] 
+Q9. (A) Write a program to create following hierarchy and verify the relationship between the processes. Where process P1 has 2 children P2 and P3. (B) WAP which will copy all the data from one file to another file using system calls. [10] 
+Q10. (A) WAP to provide synchronization among processes using mutex locks. (B) WAP to create the following hierarchy and verify the relationship using getpid() and getppid() 
+P1->P2-> P3 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Rewrite the file to include both questions and their corresponding solutions
+file_path = "/mnt/data/os_questions_solutions_with_questions.c"
+
+full_code_with_questions = '''
+/*
+Q1. (A) WAP to read last 10 characters from a file using system calls.
+*/
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+void q1a() {
+    int fd = open("sample.txt", O_RDONLY);
+    if (fd < 0) exit(1);
+    lseek(fd, -10, SEEK_END);
+    char buf[11] = {0};
+    read(fd, buf, 10);
+    write(1, buf, 10);
+    close(fd);
+}
+
+/*
+Q1. (B) WAP to create one parent process and one child process also display id of both processes.
+*/
+#include <sys/types.h>
+#include <sys/wait.h>
+
+void q1b() {
+    pid_t pid = fork();
+    if (pid == 0) {
+        printf("Child Process ID: %d\\n", getpid());
+    } else {
+        wait(NULL);
+        printf("Parent Process ID: %d\\n", getpid());
+    }
+}
+
+/*
+Q2. (A) Write a program to create two threads. One thread prints a welcome message while the second thread adds two numbers. Both the numbers to be added are passed by the main process to the thread as arguments.
+*/
+#include <pthread.h>
+
+void* welcome(void* arg) {
+    printf("Welcome to threads\\n");
+    return NULL;
+}
+
+void* add(void* args) {
+    int* a = (int*)args;
+    int sum = a[0] + a[1];
+    printf("Sum: %d\\n", sum);
+    return NULL;
+}
+
+void q2a() {
+    pthread_t t1, t2;
+    int nums[2] = {5, 10};
+    pthread_create(&t1, NULL, welcome, NULL);
+    pthread_create(&t2, NULL, add, nums);
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+}
+
+/*
+Q2. (B) WAP to implement the process synchronization using mutex locks.
+*/
+pthread_mutex_t lock;
+int counter = 0;
+
+void* sync_func(void* arg) {
+    pthread_mutex_lock(&lock);
+    for (int i = 0; i < 10000; i++) counter++;
+    pthread_mutex_unlock(&lock);
+    return NULL;
+}
+
+void q2b() {
+    pthread_t t1, t2;
+    pthread_mutex_init(&lock, NULL);
+    pthread_create(&t1, NULL, sync_func, NULL);
+    pthread_create(&t2, NULL, sync_func, NULL);
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+    printf("Counter: %d\\n", counter);
+    pthread_mutex_destroy(&lock);
+}
+
+/*
+Q3. (A) WAP to implement IPC using unnamed pipes.
+*/
+void q3a() {
+    int fd[2];
+    pipe(fd);
+    if (fork() == 0) {
+        close(fd[1]);
+        char buf[20];
+        read(fd[0], buf, 20);
+        printf("Child received: %s\\n", buf);
+    } else {
+        close(fd[0]);
+        write(fd[1], "Hello Pipe", 11);
+    }
+}
+
+/*
+Q3. (B) WAP to open a file in read only mode and read the last 5 characters from the file. Print the same on terminal.
+*/
+void q3b() {
+    int fd = open("sample.txt", O_RDONLY);
+    if (fd < 0) exit(1);
+    lseek(fd, -5, SEEK_END);
+    char buf[6] = {0};
+    read(fd, buf, 5);
+    write(1, buf, 5);
+    close(fd);
+}
+
+int main() {
+    // Example calls
+    // q1a();
+    // q1b();
+    // q2a();
+    // q2b();
+    // q3a();
+    // q3b();
+    return 0;
+}
+'''
+
+# Appending solutions for Q4 to Q10 with questions into the same file
+
+remaining_questions_code = '''
+/*
+Q4. (A) WAP to implement IPC using named pipe.
+*/
+#include <sys/stat.h>
+#include <fcntl.h>
+
+void q4a() {
+    char *fifo = "/tmp/myfifo";
+    mkfifo(fifo, 0666);
+    if (fork() == 0) {
+        int fd = open(fifo, O_WRONLY);
+        write(fd, "Hello Named Pipe", 17);
+        close(fd);
+    } else {
+        char buf[20];
+        int fd = open(fifo, O_RDONLY);
+        read(fd, buf, 20);
+        printf("Parent read: %s\\n", buf);
+        close(fd);
+    }
+}
+
+/*
+Q4. (B) WAP to create a file with some lines of content and write "hello" into that file after 4 characters from starting using system call.
+*/
+void q4b() {
+    int fd = open("file4.txt", O_CREAT | O_RDWR, 0666);
+    write(fd, "abcd1234", 8);
+    lseek(fd, 4, SEEK_SET);
+    write(fd, "hello", 5);
+    close(fd);
+}
+
+/*
+Q5. (A) WAP to demonstrate race condition between two processes.
+*/
+void q5a() {
+    int fd = open("race.txt", O_CREAT | O_RDWR, 0666);
+    write(fd, "0", 1);
+    if (fork() == 0) {
+        for (int i = 0; i < 100; i++) write(fd, "A", 1);
+    } else {
+        for (int i = 0; i < 100; i++) write(fd, "B", 1);
+    }
+    close(fd);
+}
+
+/*
+Q5. (B) WAP to calculate addition of 2 numbers in parent process and display result in child process.
+*/
+void q5b() {
+    int fd[2];
+    pipe(fd);
+    if (fork() == 0) {
+        close(fd[1]);
+        int res;
+        read(fd[0], &res, sizeof(res));
+        printf("Child: Result = %d\\n", res);
+    } else {
+        close(fd[0]);
+        int a = 10, b = 20;
+        int sum = a + b;
+        write(fd[1], &sum, sizeof(sum));
+    }
+}
+
+/*
+Q6. (A) Create two threads. One thread will add two numbers (c=a+b) and the second thread will subtract the numbers (d=a-b). Both threads will return the result to the main() function and product of returned values (cd) will be printed by the main() function.
+*/
+typedef struct {
+    int a, b;
+} pair;
+
+void* add_thread(void* args) {
+    pair* p = (pair*)args;
+    int* res = malloc(sizeof(int));
+    *res = p->a + p->b;
+    pthread_exit(res);
+}
+
+void* sub_thread(void* args) {
+    pair* p = (pair*)args;
+    int* res = malloc(sizeof(int));
+    *res = p->a - p->b;
+    pthread_exit(res);
+}
+
+void q6a() {
+    pthread_t t1, t2;
+    pair p = {10, 5};
+    int *res1, *res2;
+    pthread_create(&t1, NULL, add_thread, &p);
+    pthread_create(&t2, NULL, sub_thread, &p);
+    pthread_join(t1, (void**)&res1);
+    pthread_join(t2, (void**)&res2);
+    printf("Product: %d\\n", (*res1) * (*res2));
+    free(res1);
+    free(res2);
+}
+
+/*
+Q6. (B) Write a program to write into a pipe using popen() and pclose() functions.
+*/
+void q6b() {
+    FILE* fp = popen("cat", "w");
+    fprintf(fp, "Written via popen\\n");
+    pclose(fp);
+}
+
+/*
+Q7. (A) WAP to create two threads. One will print the numbers from 1 to 10 and the other thread will find whether a number entered by the user is even or odd.
+*/
+void* print_numbers(void* arg) {
+    for (int i = 1; i <= 10; i++) printf("%d\\n", i);
+    return NULL;
+}
+
+void* check_even_odd(void* arg) {
+    int num = *((int*)arg);
+    if (num % 2 == 0) printf("Even\\n");
+    else printf("Odd\\n");
+    return NULL;
+}
+
+void q7a() {
+    pthread_t t1, t2;
+    int num = 7;
+    pthread_create(&t1, NULL, print_numbers, NULL);
+    pthread_create(&t2, NULL, check_even_odd, &num);
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+}
+
+/*
+Q7. (B) WAP using system calls which will read from 3rd character to 10th character from a file opened in read only mode
+*/
+void q7b() {
+    int fd = open("sample.txt", O_RDONLY);
+    lseek(fd, 2, SEEK_SET);
+    char buf[9] = {0};
+    read(fd, buf, 8);
+    write(1, buf, 8);
+    close(fd);
+}
+
+/*
+Q8. (A) WAP using system calls which will read from 10th character to 15th character from a file opened in read only mode.
+*/
+void q8a() {
+    int fd = open("sample.txt", O_RDONLY);
+    lseek(fd, 9, SEEK_SET);
+    char buf[7] = {0};
+    read(fd, buf, 6);
+    write(1, buf, 6);
+    close(fd);
+}
+
+/*
+Q8. (B) WAP to implement race condition using semaphores.
+*/
+#include <semaphore.h>
+
+sem_t sem;
+int shared_data = 0;
+
+void* race_sem(void* arg) {
+    for (int i = 0; i < 10000; i++) {
+        sem_wait(&sem);
+        shared_data++;
+        sem_post(&sem);
+    }
+    return NULL;
+}
+
+void q8b() {
+    pthread_t t1, t2;
+    sem_init(&sem, 0, 1);
+    pthread_create(&t1, NULL, race_sem, NULL);
+    pthread_create(&t2, NULL, race_sem, NULL);
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+    printf("Shared Data: %d\\n", shared_data);
+    sem_destroy(&sem);
+}
+
+/*
+Q9. (A) Write a program to create following hierarchy and verify the relationship between the processes. Where process P1 has 2 children P2 and P3.
+*/
+void q9a() {
+    pid_t p2 = fork();
+    if (p2 == 0) {
+        printf("P2 ID: %d Parent: %d\\n", getpid(), getppid());
+    } else {
+        pid_t p3 = fork();
+        if (p3 == 0) {
+            printf("P3 ID: %d Parent: %d\\n", getpid(), getppid());
+        }
+    }
+}
+
+/*
+Q9. (B) WAP which will copy all the data from one file to another file using system calls.
+*/
+void q9b() {
+    int src = open("sample.txt", O_RDONLY);
+    int dest = open("copy.txt", O_CREAT | O_WRONLY, 0666);
+    char buf[100];
+    int n;
+    while ((n = read(src, buf, 100)) > 0) write(dest, buf, n);
+    close(src);
+    close(dest);
+}
+
+/*
+Q10. (A) WAP to provide synchronization among processes using mutex locks.
+*/
+void q10a() {
+    q2b();  // Reuse q2b which uses mutex for synchronization
+}
+
+/*
+Q10. (B) WAP to create the following hierarchy and verify the relationship using getpid() and getppid()
+P1->P2-> P3
+*/
+void q10b() {
+    pid_t p2 = fork();
+    if (p2 == 0) {
+        pid_t p3 = fork();
+        if (p3 == 0) {
+            printf("P3: PID = %d, PPID = %d\\n", getpid(), getppid());
+        } else {
+            wait(NULL);
+            printf("P2: PID = %d, PPID = %d\\n", getpid(), getppid());
+        }
+    } else {
+        wait(NULL);
+        printf("P1: PID = %d\\n", getpid());
+    }
+}
+'''
+
+# Append this code to the previous file
+with open("/mnt/data/os_questions_solutions_with_questions.c", "a") as f:
+    f.write(remaining_questions_code)
+
+"/mnt/data/os_questions_solutions_with_questions.c"

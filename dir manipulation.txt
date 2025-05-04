@@ -1,0 +1,220 @@
+Exercise 7: Directory Manipulation Using System Calls
+c
+Copy code
+#include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
+
+void exercise7() {
+    DIR *dir = opendir("my_directory");
+    if (dir == NULL) {
+        perror("opendir");
+        exit(1);
+    }
+
+    struct dirent *entry;
+    int file_count = 0;
+    int dir_count = 0;
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG) {
+            printf("File: %s\n", entry->d_name);
+            file_count++;
+        } else if (entry->d_type == DT_DIR) {
+            printf("Directory: %s\n", entry->d_name);
+            dir_count++;
+        }
+    }
+
+    printf("Number of files: %d\n", file_count);
+    printf("Number of directories: %d\n", dir_count);
+    closedir(dir);
+}
+
+
+Exercise 8: Process Management Using fork() System Call
+c
+Copy code
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+void exercise8() {
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        exit(1);
+    }
+
+    if (pid == 0) { // Child process
+        printf("Child PID: %d, Parent PID: %d\n", getpid(), getppid());
+    } else { // Parent process
+        printf("Parent PID: %d, Child PID: %d\n", getpid(), pid);
+    }
+}
+
+
+Exercise 9: Create Files in Parent and Child Process Using fork()
+c
+Copy code
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdlib.h>
+
+void exercise9() {
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        exit(1);
+    }
+
+    if (pid == 0) { // Child process
+        int fd = open("child.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (fd < 0) {
+            perror("open child.txt");
+            exit(1);
+        }
+        write(fd, "This is the child process", 24);
+        close(fd);
+    } else { // Parent process
+        int fd = open("parent.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (fd < 0) {
+            perror("open parent.txt");
+            exit(1);
+        }
+        write(fd, "This is the parent process", 25);
+        close(fd);
+    }
+}
+
+
+
+Exercise 10: Thread Creation Using Pthread
+c
+Copy code
+#include <stdio.h>
+#include <pthread.h>
+
+void *print_thread_id(void *arg) {
+    pthread_t thread_id = pthread_self();
+    printf("Thread ID: %lu\n", thread_id);
+    return NULL;
+}
+
+void exercise10() {
+    pthread_t thread1, thread2;
+
+    pthread_create(&thread1, NULL, print_thread_id, NULL);
+    pthread_create(&thread2, NULL, print_thread_id, NULL);
+
+    pthread_join(thread1, NULL);
+    pthread_join(thread2, NULL);
+}
+
+
+
+Exercise 11: Random Number Generation and Prime Checking
+c
+Copy code
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+void *generate_random(void *arg) {
+    int random_number = rand() % 100 + 1;
+    printf("Random Number: %d\n", random_number);
+    return (void *)(long)random_number;
+}
+
+void *check_prime(void *arg) {
+    int number = (int)(long)arg;
+    int is_prime = 1;
+    for (int i = 2; i <= number / 2; i++) {
+        if (number % i == 0) {
+            is_prime = 0;
+            break;
+        }
+    }
+    printf("Number %d is %sprime\n", number, is_prime ? "" : "not ");
+    return NULL;
+}
+
+void exercise11() {
+    pthread_t thread1, thread2;
+
+    pthread_create(&thread1, NULL, generate_random, NULL);
+    pthread_join(thread1, NULL);
+
+    int random_number = (int)(long)thread1;
+    pthread_create(&thread2, NULL, check_prime, (void *)(long)random_number);
+    pthread_join(thread2, NULL);
+}
+
+
+Exercise 12: Even and Odd Number Printing in Threads
+c
+Copy code
+#include <stdio.h>
+#include <pthread.h>
+
+void *print_even_numbers(void *arg) {
+    for (int i = 2; i <= 100; i += 2) {
+        printf("Even: %d\n", i);
+    }
+    return NULL;
+}
+
+void *print_odd_numbers(void *arg) {
+    for (int i = 1; i < 100; i += 2) {
+        printf("Odd: %d\n", i);
+    }
+    return NULL;
+}
+
+void exercise12() {
+    pthread_t thread1, thread2;
+
+    pthread_create(&thread1, NULL, print_even_numbers, NULL);
+    pthread_create(&thread2, NULL, print_odd_numbers, NULL);
+
+    pthread_join(thread1, NULL);
+    pthread_join(thread2, NULL);
+}
+
+
+int main() {
+    printf("Exercise 5: Last 10 characters from the file\n");
+    exercise5();
+
+    printf("\nExercise 6: Half content of the file\n");
+    exercise6();
+
+    printf("\nExercise 7: Directory manipulation\n");
+    exercise7();
+
+    printf("\nExercise 8: Process management using fork()\n");
+    exercise8();
+
+    printf("\nExercise 9: Parent and child processes creating files\n");
+    exercise9();
+
+    printf("\nExercise 10: Thread creation using pthread\n");
+    exercise10();
+
+    printf("\nExercise 11: Random number generation and prime checking\n");
+    exercise11();
+
+    printf("\nExercise 12: Even and odd numbers printed using threads\n");
+    exercise12();
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+

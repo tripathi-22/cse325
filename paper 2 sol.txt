@@ -1,0 +1,240 @@
+01 Write a program using directory system calls make a directory on desktop and create a file inside the directory and list the contents of the directory. 
+Q2 Write a program using shell script for displaying the list of odd numbers ranging from 21-121 
+03 Write a program using system call to read from console until user enters '' and print the same on a file. 
+04 Write a program on parent child process, where you have to simulate the execution of child before parent. 
+Q5 Write a program that performs statistical operations of calculating the sum of numbers maximum and minimum for a set of numbers. Create three threads where each performs their respective operations 
+Q6 Write a program using pthread to find the length of string, where strings are passed to thread function 
+Q7 Write a program on process synchronization, where you have to provide the solution to race condition using semaphores 
+08 Write a program on process synchronization where you have to provide solution to race condition using mutex lock 
+Q9 Implement Inter-process communication using shared memory. 
+010 Implement Inter-process communication using pipes, you have to pass the message from child to parent. 
+
+content = """
+// Q1. Write a program using directory system calls to make a directory on desktop,
+// create a file inside the directory and list the contents of the directory.
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+int main1() {
+    const char *dir_path = "/home/$USER/Desktop/mydir";
+    mkdir(dir_path, 0755);
+    chdir(dir_path);
+    int fd = open("myfile.txt", O_CREAT | O_WRONLY, 0644);
+    write(fd, "Sample content", 14);
+    close(fd);
+
+    DIR *d = opendir(".");
+    struct dirent *dir;
+    while ((dir = readdir(d)) != NULL)
+        printf("%s\\n", dir->d_name);
+    closedir(d);
+    return 0;
+}
+
+// Q2. Write a program using shell script for displaying the list of odd numbers ranging from 21-121
+// Save this as odd_numbers.sh
+/*
+#!/bin/bash
+for ((i=21; i<=121; i+=2))
+do
+  echo $i
+done
+*/
+
+// Q3. Write a program using system call to read from console until user enters '' and print the same on a file.
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+
+int main3() {
+    int fd = open("output.txt", O_CREAT | O_WRONLY, 0644);
+    char buffer[100];
+    while (1) {
+        read(0, buffer, sizeof(buffer));
+        if (strcmp(buffer, "\\n") == 0) break;
+        write(fd, buffer, strlen(buffer));
+    }
+    close(fd);
+    return 0;
+}
+
+// Q4. Write a program on parent-child process, simulate execution of child before parent.
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main4() {
+    pid_t pid = fork();
+    if (pid == 0) {
+        printf("Child Process\\n");
+    } else {
+        wait(NULL);
+        printf("Parent Process\\n");
+    }
+    return 0;
+}
+
+// Q5. Statistical operations with 3 threads
+#include <stdio.h>
+#include <pthread.h>
+
+int arr[] = {10, 20, 30, 40, 50};
+int n = 5;
+void *sum_func(void *arg) {
+    int sum = 0;
+    for (int i = 0; i < n; i++) sum += arr[i];
+    printf("Sum: %d\\n", sum);
+    return NULL;
+}
+void *min_func(void *arg) {
+    int min = arr[0];
+    for (int i = 1; i < n; i++)
+        if (arr[i] < min) min = arr[i];
+    printf("Min: %d\\n", min);
+    return NULL;
+}
+void *max_func(void *arg) {
+    int max = arr[0];
+    for (int i = 1; i < n; i++)
+        if (arr[i] > max) max = arr[i];
+    printf("Max: %d\\n", max);
+    return NULL;
+}
+
+int main5() {
+    pthread_t t1, t2, t3;
+    pthread_create(&t1, NULL, sum_func, NULL);
+    pthread_create(&t2, NULL, min_func, NULL);
+    pthread_create(&t3, NULL, max_func, NULL);
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+    pthread_join(t3, NULL);
+    return 0;
+}
+
+// Q6. pthread to find length of string
+#include <stdio.h>
+#include <pthread.h>
+#include <string.h>
+
+void *length_func(void *arg) {
+    char *str = (char *)arg;
+    printf("Length of string: %lu\\n", strlen(str));
+    return NULL;
+}
+
+int main6() {
+    pthread_t tid;
+    char str[] = "HelloThreads";
+    pthread_create(&tid, NULL, length_func, str);
+    pthread_join(tid, NULL);
+    return 0;
+}
+
+// Q7. Process synchronization using semaphores
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <semaphore.h>
+
+int count = 0;
+sem_t sem;
+
+void *process(void *arg) {
+    sem_wait(&sem);
+    int temp = count;
+    sleep(1);
+    count = temp + 1;
+    printf("Count: %d\\n", count);
+    sem_post(&sem);
+    return NULL;
+}
+
+int main7() {
+    pthread_t t1, t2;
+    sem_init(&sem, 0, 1);
+    pthread_create(&t1, NULL, process, NULL);
+    pthread_create(&t2, NULL, process, NULL);
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+    sem_destroy(&sem);
+    return 0;
+}
+
+// Q8. Race condition using mutex
+#include <stdio.h>
+#include <pthread.h>
+
+int shared = 0;
+pthread_mutex_t lock;
+
+void *mutex_func(void *arg) {
+    pthread_mutex_lock(&lock);
+    shared++;
+    printf("Shared: %d\\n", shared);
+    pthread_mutex_unlock(&lock);
+    return NULL;
+}
+
+int main8() {
+    pthread_t t1, t2;
+    pthread_mutex_init(&lock, NULL);
+    pthread_create(&t1, NULL, mutex_func, NULL);
+    pthread_create(&t2, NULL, mutex_func, NULL);
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+    pthread_mutex_destroy(&lock);
+    return 0;
+}
+
+// Q9. IPC using shared memory
+#include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <string.h>
+
+int main9() {
+    int shmid = shmget(IPC_PRIVATE, 1024, IPC_CREAT | 0666);
+    char *str = (char *)shmat(shmid, NULL, 0);
+    strcpy(str, "Shared Memory IPC");
+    printf("Data written: %s\\n", str);
+    shmdt(str);
+    shmctl(shmid, IPC_RMID, NULL);
+    return 0;
+}
+
+// Q10. IPC using pipe (child to parent)
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+
+int main10() {
+    int fd[2];
+    pipe(fd);
+    pid_t pid = fork();
+    if (pid == 0) {
+        close(fd[0]);
+        write(fd[1], "Hello Parent", 13);
+        close(fd[1]);
+    } else {
+        char buffer[20];
+        close(fd[1]);
+        read(fd[0], buffer, sizeof(buffer));
+        printf("Received: %s\\n", buffer);
+        close(fd[0]);
+    }
+    return 0;
+}
+"""
+
+with open(file_path, "w") as f:
+    f.write(content)
+
+file_path

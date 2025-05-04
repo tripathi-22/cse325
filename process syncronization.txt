@@ -1,0 +1,363 @@
+Write a C program to create two threads that increment a shared variable using a mutex to synchronize access to the variable. 
+Exercise 2: Write a C program to create two processes that increment a shared variable using semaphores to synchronize access to the variable. 
+Exercise 3: Write a C program to create two processes that implement a producer-consumer model using semaphores to synchronize access to the shared buffer. 
+Exercise 4: You are assigned to create a simulation for a restaurant's dining room, ensuring seam-less interactions between customers and chefs. The restaurant has a finite number of tables, and customers follow a series of steps, such as entering, sitting at a table, or-dering, eating, and leaving. Meanwhile, chefs are responsible for preparing the dishes. Your task is to use semaphores to synchronize the activities of customers and chefs. 
+Exercise 5: You need to code a simple file management system where multiple threads need to read and write to a shared file concurrently. The goal is to synchronize the access to the file to prevent data corruption and ensure consistency. Use semaphores mutexes to achieve synchronization. or 
+Exercise 6: Implement a solution in C for the bounded buffer problem, using semaphores or mutexes to synchronize multiple producer and consumer threads, ensuring proper handling of buffer overflows, underflows, and preventing race conditions.
+
+
+Exercise 1: Incrementing a Shared Variable Using Mutex
+c
+Copy code
+#include <stdio.h>
+#include <pthread.h>
+
+#define NUM_THREADS 2
+#define INCREMENT_COUNT 100000
+
+pthread_mutex_t mutex;
+int shared_variable = 0;
+
+void *increment(void *arg) {
+    for (int i = 0; i < INCREMENT_COUNT; i++) {
+        pthread_mutex_lock(&mutex);
+        shared_variable++;
+        pthread_mutex_unlock(&mutex);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[NUM_THREADS];
+    pthread_mutex_init(&mutex, NULL);
+
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_create(&threads[i], NULL, increment, NULL);
+    }
+
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    printf("Final value of shared_variable: %d\n", shared_variable);
+
+    pthread_mutex_destroy(&mutex);
+    return 0;
+}
+
+
+
+Exercise 2: Incrementing a Shared Variable Using Semaphores
+c
+Copy code
+#include <stdio.h>
+#include <semaphore.h>
+#include <pthread.h>
+#include <unistd.h>
+
+#define NUM_THREADS 2
+#define INCREMENT_COUNT 100000
+
+sem_t semaphore;
+int shared_variable = 0;
+
+void *increment(void *arg) {
+    for (int i = 0; i < INCREMENT_COUNT; i++) {
+        sem_wait(&semaphore);
+        shared_variable++;
+        sem_post(&semaphore);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[NUM_THREADS];
+    sem_init(&semaphore, 0, 1);
+
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_create(&threads[i], NULL, increment, NULL);
+    }
+
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    printf("Final value of shared_variable: %d\n", shared_variable);
+
+    sem_destroy(&semaphore);
+    return 0;
+}
+
+
+
+
+Exercise 3: Producer-Consumer Model Using Semaphores
+c
+Copy code
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+
+#define BUFFER_SIZE 5
+int buffer[BUFFER_SIZE];
+int in = 0, out = 0;
+sem_t empty, full, mutex;
+
+void *producer(void *arg) {
+    int item = 0;
+    while (1) {
+        sem_wait(&empty);
+        sem_wait(&mutex);
+
+        buffer[in] = item;
+        in = (in + 1) % BUFFER_SIZE;
+        printf("Produced: %d\n", item);
+        item++;
+
+        sem_post(&mutex);
+        sem_post(&full);
+
+        sleep(1);
+    }
+    return NULL;
+}
+
+void *consumer(void *arg) {
+    while (1) {
+        sem_wait(&full);
+        sem_wait(&mutex);
+
+        int item = buffer[out];
+        out = (out + 1) % BUFFER_SIZE;
+        printf("Consumed: %d\n", item);
+
+        sem_post(&mutex);
+        sem_post(&empty);
+
+        sleep(1);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t prod_thread, cons_thread;
+
+    sem_init(&empty, 0, BUFFER_SIZE);
+    sem_init(&full, 0, 0);
+    sem_init(&mutex, 0, 1);
+
+    pthread_create(&prod_thread, NULL, producer, NULL);
+    pthread_create(&cons_thread, NULL, consumer, NULL);
+
+    pthread_join(prod_thread, NULL);
+    pthread_join(cons_thread, NULL);
+
+    sem_destroy(&empty);
+    sem_destroy(&full);
+    sem_destroy(&mutex);
+
+    return 0;
+}
+
+
+
+Exercise 4: Restaurant Simulation Using Semaphores
+c
+Copy code
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+#define NUM_CUSTOMERS 5
+#define NUM_CHEFS 2
+#define NUM_TABLES 3
+
+sem_t tables, chefs;
+
+void *customer(void *arg) {
+    int customer_id = *((int *)arg);
+    printf("Customer %d is waiting for a table...\n", customer_id);
+
+    sem_wait(&tables);
+    printf("Customer %d is sitting at a table.\n", customer_id);
+
+    sem_wait(&chefs);
+    printf("Customer %d is ordering food.\n", customer_id);
+    sleep(2); // simulate time to order food
+    printf("Customer %d is eating.\n", customer_id);
+    sleep(3); // simulate eating time
+
+    printf("Customer %d is leaving the table.\n", customer_id);
+    sem_post(&chefs);
+    sem_post(&tables);
+    return NULL;
+}
+
+void *chef(void *arg) {
+    while (1) {
+        sem_wait(&chefs);
+        printf("Chef is preparing food.\n");
+        sleep(5); // simulate food preparation
+        printf("Chef has finished preparing food.\n");
+        sem_post(&chefs);
+    }
+    return NULL;
+}
+
+int main() {
+    sem_init(&tables, 0, NUM_TABLES);
+    sem_init(&chefs, 0, NUM_CHEFS);
+
+    pthread_t customer_threads[NUM_CUSTOMERS];
+    pthread_t chef_threads[NUM_CHEFS];
+    int customer_ids[NUM_CUSTOMERS];
+
+    for (int i = 0; i < NUM_CHEFS; i++) {
+        pthread_create(&chef_threads[i], NULL, chef, NULL);
+    }
+
+    for (int i = 0; i < NUM_CUSTOMERS; i++) {
+        customer_ids[i] = i + 1;
+        pthread_create(&customer_threads[i], NULL, customer, &customer_ids[i]);
+    }
+
+    for (int i = 0; i < NUM_CUSTOMERS; i++) {
+        pthread_join(customer_threads[i], NULL);
+    }
+
+    for (int i = 0; i < NUM_CHEFS; i++) {
+        pthread_join(chef_threads[i], NULL);
+    }
+
+    sem_destroy(&tables);
+    sem_destroy(&chefs);
+    return 0;
+}
+
+
+
+
+Exercise 5: Simple File Management System with Multiple Threads
+c
+Copy code
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+sem_t mutex;
+FILE *file;
+
+void *write_to_file(void *arg) {
+    sem_wait(&mutex);
+    file = fopen("shared_file.txt", "a");
+    if (file == NULL) {
+        perror("fopen");
+        sem_post(&mutex);
+        return NULL;
+    }
+
+    fprintf(file, "Written by thread: %ld\n", pthread_self());
+    fclose(file);
+    sem_post(&mutex);
+    return NULL;
+}
+
+int main() {
+    sem_init(&mutex, 0, 1);
+
+    pthread_t threads[5];
+
+    for (int i = 0; i < 5; i++) {
+        pthread_create(&threads[i], NULL, write_to_file, NULL);
+    }
+
+    for (int i = 0; i < 5; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    sem_destroy(&mutex);
+    return 0;
+}
+
+
+
+Exercise 6: Bounded Buffer Problem Using Semaphores
+c
+Copy code
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+
+#define BUFFER_SIZE 5
+int buffer[BUFFER_SIZE];
+int in = 0, out = 0;
+sem_t empty, full, mutex;
+
+void *producer(void *arg) {
+    while (1) {
+        sem_wait(&empty);
+        sem_wait(&mutex);
+
+        buffer[in] = rand() % 100;
+        printf("Produced: %d\n", buffer[in]);
+        in = (in + 1) % BUFFER_SIZE;
+
+        sem_post(&mutex);
+        sem_post(&full);
+
+        sleep(1);
+    }
+    return NULL;
+}
+
+void *consumer(void *arg) {
+    while (1) {
+        sem_wait(&full);
+        sem_wait(&mutex);
+
+        int item = buffer[out];
+        printf("Consumed: %d\n", item);
+        out = (out + 1) % BUFFER_SIZE;
+
+        sem_post(&mutex);
+        sem_post(&empty);
+
+        sleep(1);
+    }
+    return NULL;
+}
+
+int main() {
+    sem_init(&empty, 0, BUFFER_SIZE);
+    sem_init(&full, 0, 0);
+    sem_init(&mutex, 0, 1);
+
+    pthread_t prod_thread, cons_thread;
+
+    pthread_create(&prod_thread, NULL, producer, NULL);
+    pthread_create(&cons_thread, NULL, consumer, NULL);
+
+    pthread_join(prod_thread, NULL);
+    pthread_join(cons_thread, NULL);
+
+    sem_destroy(&empty);
+    sem_destroy(&full);
+    sem_destroy(&mutex);
+
+    return 0;
+}
+
+
+
+gcc exercise1.c -o exercise1 -pthread -lrt
+./exercise1
+
+
+
+
+
+
+
+
